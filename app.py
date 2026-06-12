@@ -8,11 +8,12 @@ app = Flask(__name__)
 def upload_to_cloud(file_path):
     """Uploads the file to Catbox and returns the public link."""
     url = "https://catbox.moe/user/api.php"
+    catbox_hash = os.environ.get("CATBOX_USERHASH")
     
     # Add your userhash to tell Catbox who is uploading the file
     data = {
         "reqtype": "fileupload",
-        "userhash": ""  # <-- Replace with your actual userhash
+        "userhash": catbox_hash  # <-- Replace with your actual userhash
     }
     
     with open(file_path, 'rb') as f:

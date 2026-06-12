@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Fetcher</title>
+    <title>Real-Time Media Fetcher</title>
     <style>
-        /* Modern, clean CSS using basic Flexbox */
         :root {
-            --primary: #4F46E5;
-            --primary-hover: #4338CA;
-            --bg: #F3F4F6;
-            --card-bg: #FFFFFF;
-            --text-main: #1F2937;
-            --text-muted: #6B7280;
+            --primary: #2563EB;
+            --primary-hover: #1D4ED8;
+            --bg: #0F172A;
+            --card-bg: #1E293B;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border: #334155;
         }
 
         body {
@@ -21,7 +21,7 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: system-ui, -apple-system, sans-serif;
             background-color: var(--bg);
             color: var(--text-main);
         }
@@ -29,32 +29,31 @@
         .card {
             background-color: var(--card-bg);
             padding: 40px 30px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            border: 1px solid var(--border);
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             text-align: center;
             box-sizing: border-box;
         }
 
-        h2 { margin-top: 0; margin-bottom: 25px; }
-
-        .input-group { margin-bottom: 20px; }
+        h2 { margin: 0 0 10px 0; font-weight: 600; letter-spacing: -0.5px; }
+        p { color: var(--text-muted); font-size: 14px; margin: 0 0 25px 0; }
 
         input[type="url"] {
             width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #E5E7EB;
-            border-radius: 8px;
-            font-size: 16px;
+            padding: 14px;
+            background-color: #0F172A;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 15px;
+            color: white;
             box-sizing: border-box;
-            transition: border-color 0.3s ease;
+            margin-bottom: 15px;
+            transition: border-color 0.2s;
         }
 
-        input[type="url"]:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
+        input[type="url"]:focus { outline: none; border-color: var(--primary); }
 
         button {
             width: 100%;
@@ -62,26 +61,24 @@
             background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: 6px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background 0.2s;
         }
 
         button:hover { background-color: var(--primary-hover); }
-        button:disabled { background-color: #A5B4FC; cursor: not-allowed; }
+        button:disabled { background-color: #475569; color: #94A3B8; cursor: not-allowed; }
 
-        /* Progress Bar UI */
         .progress-wrapper { display: none; margin-top: 25px; text-align: left; }
-        
-        .status-text { font-size: 14px; color: var(--text-muted); margin-bottom: 8px; display: block;}
+        .status-text { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; display: block; }
         
         .progress-bar-bg {
             width: 100%;
-            height: 8px;
-            background-color: #E5E7EB;
-            border-radius: 10px;
+            height: 6px;
+            background-color: #334155;
+            border-radius: 4px;
             overflow: hidden;
         }
 
@@ -89,27 +86,25 @@
             height: 100%;
             width: 0%;
             background-color: var(--primary);
-            border-radius: 10px;
-            transition: width 0.5s ease; /* Smooth animation */
+            transition: width 0.2s ease-out;
         }
 
-        .error-msg { color: #DC2626; margin-top: 15px; font-size: 14px; display: none; }
+        .error-msg { color: #EF4444; margin-top: 15px; font-size: 13px; display: none; text-align: left; background: #451A1A; padding: 10px; border-radius: 4px; border: 1px solid #7F1D1D;}
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h2>Save to Cloud</h2>
+        <h2>Audio Cloud Pipeline</h2>
+        <p>Extract links directly into your unified remote repository</p>
         
         <form id="download-form">
-            <div class="input-group">
-                <input type="url" id="url_input" name="url_input" placeholder="Paste link here..." required autofocus>
-            </div>
-            <button type="submit" id="submit-btn">Process Audio</button>
+            <input type="url" id="url_input" placeholder="Paste media stream link..." required autofocus>
+            <button type="submit" id="submit-btn">Run Engine Pipeline</button>
         </form>
 
         <div class="progress-wrapper" id="progress-wrapper">
-            <span class="status-text" id="status-text">Initializing...</span>
+            <span class="status-text" id="status-text">Ready...</span>
             <div class="progress-bar-bg">
                 <div class="progress-fill" id="progress-fill"></div>
             </div>
@@ -120,9 +115,8 @@
 
     <script>
         document.getElementById('download-form').addEventListener('submit', async function(e) {
-            e.preventDefault(); // Stop standard form submission
+            e.preventDefault();
             
-            const form = e.target;
             const urlInput = document.getElementById('url_input').value;
             const btn = document.getElementById('submit-btn');
             const progressWrapper = document.getElementById('progress-wrapper');
@@ -130,70 +124,76 @@
             const statusText = document.getElementById('status-text');
             const errorMsg = document.getElementById('error-msg');
 
-            // 1. Reset UI State
+            // Setup display state
             errorMsg.style.display = 'none';
             progressWrapper.style.display = 'block';
             btn.disabled = true;
             progressFill.style.width = '0%';
-            
-            // 2. Start Simulated Progress
-            let progress = 0;
-            const timer = setInterval(() => {
-                if (progress < 30) {
-                    progress += 2;
-                    statusText.innerText = 'Downloading audio from source...';
-                } else if (progress < 70) {
-                    progress += 1;
-                    statusText.innerText = 'Converting file to MP3...';
-                } else if (progress < 90) {
-                    progress += 0.5;
-                    statusText.innerText = 'Uploading to Catbox cloud...';
-                }
-                progressFill.style.width = progress + '%';
-            }, 600);
+            statusText.innerText = 'Initializing application runtime...';
 
-            // 3. Send request to Flask backend
             try {
                 const formData = new FormData();
                 formData.append('url_input', urlInput);
 
-                const response = await fetch('/', {
-                    method: 'POST',
-                    body: formData
-                });
+                // Use fetch to process chunked text pipeline
+                const response = await fetch('/process', { method: 'POST', body: formData });
+                if (!response.ok) throw new Error("Server route execution failure.");
 
-                clearInterval(timer); // Stop the simulation timer
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                let leftoverBuffer = "";
 
-                if (response.ok) {
-                    // Instantly snap to 100% on success
-                    progressFill.style.width = '100%';
-                    statusText.innerText = 'Done! Generating JSON...';
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
 
-                    // 4. Force browser to download the JSON blob silently
-                    const blob = await response.blob();
-                    const downloadUrl = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = downloadUrl;
-                    a.download = "song_data.json"; // Default filename
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(downloadUrl);
+                    // Read chunk block text and split line by line
+                    leftoverBuffer += decoder.decode(value, { stream: true });
+                    const lines = leftoverBuffer.split("\n");
+                    leftoverBuffer = lines.pop(); // Save incomplete line fragments if any
 
-                    // Reset the UI after 2 seconds
-                    setTimeout(() => {
-                        progressWrapper.style.display = 'none';
-                        btn.disabled = false;
-                        form.reset();
-                    }, 2000);
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        
+                        const payload = JSON.parse(line);
 
-                } else {
-                    throw new Error('Server returned an error.');
+                        if (payload.type === 'status') {
+                            statusText.innerText = payload.stage;
+                        } 
+                        else if (payload.type === 'progress') {
+                            statusText.innerText = payload.stage;
+                            progressFill.style.width = payload.percent + '%';
+                        } 
+                        else if (payload.type === 'error') {
+                            throw new Error(payload.message);
+                        } 
+                        else if (payload.type === 'final') {
+                            // Perfect execution target reached. Handle structural download injection.
+                            statusText.innerText = "Pipeline complete! Compiling manifest metadata.";
+                            progressFill.style.width = '100%';
+
+                            const blob = new Blob([JSON.stringify(payload.data, null, 4)], { type: "application/json" });
+                            const linkUrl = window.URL.createObjectURL(blob);
+                            const downloadTrigger = document.createElement('a');
+                            downloadTrigger.href = linkUrl;
+                            downloadTrigger.download = "song_data.json";
+                            document.body.appendChild(downloadTrigger);
+                            downloadTrigger.click();
+                            downloadTrigger.remove();
+                            window.URL.revokeObjectURL(linkUrl);
+                        }
+                    }
                 }
-            } catch (error) {
-                clearInterval(timer);
+
+                setTimeout(() => {
+                    progressWrapper.style.display = 'none';
+                    btn.disabled = false;
+                    document.getElementById('download-form').reset();
+                }, 1500);
+
+            } catch (err) {
                 progressWrapper.style.display = 'none';
-                errorMsg.innerText = "Error: Something went wrong processing the URL.";
+                errorMsg.innerText = "Pipeline Execution Exception: " + err.message;
                 errorMsg.style.display = 'block';
                 btn.disabled = false;
             }

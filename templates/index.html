@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Centered Input</title>
+    <style>
+        /* Minimal CSS to center the content vertically and horizontally */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Takes up the full height of the viewport */
+            margin: 0;
+            font-family: sans-serif;
+        }
+        
+        /* Just adding some breathing room to the inputs */
+        .input-box {
+            padding: 10px;
+            font-size: 16px;
+            width: 250px;
+        }
+        
+        .submit-btn {
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .container {
+            text-align: center; /* Centers the text and inline elements inside */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h3>Enter URL</h3>
+        <form method="POST">
+            <input type="url" name="url_input" class="input-box" placeholder="https://..." required autofocus>
+            <button type="submit" class="submit-btn">Go</button>
+        </form>
+
+        {% if url %}
+            <p>Submitted: <a href="{{ url }}" target="_blank">{{ url }}</a></p>
+        {% endif %}
+    </div>
+
+</body>
+</html>
+

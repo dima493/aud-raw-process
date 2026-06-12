@@ -2,50 +2,203 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Simple Centered Input</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Fetcher</title>
     <style>
-        /* Minimal CSS to center the content vertically and horizontally */
+        /* Modern, clean CSS using basic Flexbox */
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --bg: #F3F4F6;
+            --card-bg: #FFFFFF;
+            --text-main: #1F2937;
+            --text-muted: #6B7280;
+        }
+
         body {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh; /* Takes up the full height of the viewport */
+            height: 100vh;
             margin: 0;
-            font-family: sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
         }
-        
-        /* Just adding some breathing room to the inputs */
-        .input-box {
-            padding: 10px;
-            font-size: 16px;
-            width: 250px;
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 40px 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-sizing: border-box;
         }
-        
-        .submit-btn {
-            padding: 10px 15px;
+
+        h2 { margin-top: 0; margin-bottom: 25px; }
+
+        .input-group { margin-bottom: 20px; }
+
+        input[type="url"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
             font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="url"]:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
+            transition: background-color 0.3s ease;
         }
+
+        button:hover { background-color: var(--primary-hover); }
+        button:disabled { background-color: #A5B4FC; cursor: not-allowed; }
+
+        /* Progress Bar UI */
+        .progress-wrapper { display: none; margin-top: 25px; text-align: left; }
         
-        .container {
-            text-align: center; /* Centers the text and inline elements inside */
+        .status-text { font-size: 14px; color: var(--text-muted); margin-bottom: 8px; display: block;}
+        
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background-color: #E5E7EB;
+            border-radius: 10px;
+            overflow: hidden;
         }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background-color: var(--primary);
+            border-radius: 10px;
+            transition: width 0.5s ease; /* Smooth animation */
+        }
+
+        .error-msg { color: #DC2626; margin-top: 15px; font-size: 14px; display: none; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h3>Enter URL</h3>
-        <form method="POST">
-            <input type="url" name="url_input" class="input-box" placeholder="https://..." required autofocus>
-            <button type="submit" class="submit-btn">Go</button>
+    <div class="card">
+        <h2>Save to Cloud</h2>
+        
+        <form id="download-form">
+            <div class="input-group">
+                <input type="url" id="url_input" name="url_input" placeholder="Paste link here..." required autofocus>
+            </div>
+            <button type="submit" id="submit-btn">Process Audio</button>
         </form>
 
-        {% if url %}
-            <p>Submitted: <a href="{{ url }}" target="_blank">{{ url }}</a></p>
-        {% endif %}
+        <div class="progress-wrapper" id="progress-wrapper">
+            <span class="status-text" id="status-text">Initializing...</span>
+            <div class="progress-bar-bg">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="error-msg" id="error-msg"></div>
     </div>
+
+    <script>
+        document.getElementById('download-form').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Stop standard form submission
+            
+            const form = e.target;
+            const urlInput = document.getElementById('url_input').value;
+            const btn = document.getElementById('submit-btn');
+            const progressWrapper = document.getElementById('progress-wrapper');
+            const progressFill = document.getElementById('progress-fill');
+            const statusText = document.getElementById('status-text');
+            const errorMsg = document.getElementById('error-msg');
+
+            // 1. Reset UI State
+            errorMsg.style.display = 'none';
+            progressWrapper.style.display = 'block';
+            btn.disabled = true;
+            progressFill.style.width = '0%';
+            
+            // 2. Start Simulated Progress
+            let progress = 0;
+            const timer = setInterval(() => {
+                if (progress < 30) {
+                    progress += 2;
+                    statusText.innerText = 'Downloading audio from source...';
+                } else if (progress < 70) {
+                    progress += 1;
+                    statusText.innerText = 'Converting file to MP3...';
+                } else if (progress < 90) {
+                    progress += 0.5;
+                    statusText.innerText = 'Uploading to Catbox cloud...';
+                }
+                progressFill.style.width = progress + '%';
+            }, 600);
+
+            // 3. Send request to Flask backend
+            try {
+                const formData = new FormData();
+                formData.append('url_input', urlInput);
+
+                const response = await fetch('/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                clearInterval(timer); // Stop the simulation timer
+
+                if (response.ok) {
+                    // Instantly snap to 100% on success
+                    progressFill.style.width = '100%';
+                    statusText.innerText = 'Done! Generating JSON...';
+
+                    // 4. Force browser to download the JSON blob silently
+                    const blob = await response.blob();
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = "song_data.json"; // Default filename
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(downloadUrl);
+
+                    // Reset the UI after 2 seconds
+                    setTimeout(() => {
+                        progressWrapper.style.display = 'none';
+                        btn.disabled = false;
+                        form.reset();
+                    }, 2000);
+
+                } else {
+                    throw new Error('Server returned an error.');
+                }
+            } catch (error) {
+                clearInterval(timer);
+                progressWrapper.style.display = 'none';
+                errorMsg.innerText = "Error: Something went wrong processing the URL.";
+                errorMsg.style.display = 'block';
+                btn.disabled = false;
+            }
+        });
+    </script>
 
 </body>
 </html>
-
